@@ -1,0 +1,71 @@
+{
+  "default_values": [
+    {
+      "vertex": "cmp_mood",
+      "input_port": "b",
+      "value": { "storage": "inline", "data": 0 }
+    }
+  ],
+  "entry_vertices": [
+    { "vertex": "read_mood", "ports": ["a", "b"] },
+    { "vertex": "settle_gas", "ports": [] }
+  ],
+  "vertices": [
+    {
+      "kind": { "variant": "on_chain", "tool_fqn": "xyz.taluslabs.sui.settle-gas@1" },
+      "name": "settle_gas",
+      "exit_ports": [{ "name": "ok" }]
+    },
+    {
+      "kind": { "variant": "off_chain", "tool_fqn": "xyz.taluslabs.math.i64.add@1" },
+      "name": "read_mood",
+      "entry_ports": [
+        { "name": "a", "encrypted": false },
+        { "name": "b", "encrypted": false }
+      ],
+      "exit_ports": [{ "name": "result" }]
+    },
+    {
+      "kind": { "variant": "off_chain", "tool_fqn": "xyz.taluslabs.math.i64.cmp@1" },
+      "name": "cmp_mood",
+      "exit_ports": [{ "name": "lt" }, { "name": "eq" }, { "name": "gt" }]
+    },
+    {
+      "kind": { "variant": "off_chain", "tool_fqn": "xyz.taluslabs.string.from-i64@1" },
+      "name": "to_string",
+      "exit_ports": [{ "name": "str" }]
+    },
+    {
+      "kind": { "variant": "off_chain", "tool_fqn": "xyz.taluslabs.storage.walrus.upload-json@1" },
+      "name": "happy_action",
+      "exit_ports": [{ "name": "ok" }]
+    },
+    {
+      "kind": { "variant": "off_chain", "tool_fqn": "xyz.taluslabs.math.i64.mul@1" },
+      "name": "result",
+      "exit_ports": [{ "name": "output" }]
+    }
+  ],
+  "edges": [
+    {
+      "from": { "vertex": "read_mood", "output_variant": "ok", "output_port": "result" },
+      "to": { "vertex": "cmp_mood", "input_port": "a" }
+    },
+    {
+      "from": { "vertex": "cmp_mood", "output_variant": "gt", "output_port": "a" },
+      "to": { "vertex": "to_string", "input_port": "num" }
+    },
+    {
+      "from": { "vertex": "settle_gas", "output_variant": "ok", "output_port": "ok" },
+      "to": { "vertex": "to_string", "input_port": "num" }
+    },
+    {
+      "from": { "vertex": "to_string", "output_variant": "ok", "output_port": "str" },
+      "to": { "vertex": "happy_action", "input_port": "json" }
+    },
+    {
+      "from": { "vertex": "happy_action", "output_variant": "ok", "output_port": "ok" },
+      "to": { "vertex": "result", "input_port": "final" }
+    }
+  ]
+}
